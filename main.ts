@@ -11,7 +11,7 @@
 // the totals are compared, and the winner is written out. No network, no
 // randomness, no input files — the whole decision is in this file.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 type Candidate = {
   word: string;
@@ -102,6 +102,18 @@ validate(winner.word);
 const outDir = "/output";
 mkdirSync(outDir, { recursive: true });
 writeFileSync(`${outDir}/entry.txt`, winner.word, "utf8");
+
+// Read-back verification: the gate scores the bytes on disk, not the
+// string in memory, so confirm the file holds exactly the winning word
+// before reporting success.
+const written = readFileSync(`${outDir}/entry.txt`, "utf8");
+if (written !== winner.word) {
+  throw new Error(
+    `read-back mismatch: file holds ${JSON.stringify(written)}, ` +
+      `expected ${JSON.stringify(winner.word)}`,
+  );
+}
+validate(written);
 
 console.log(`Candidates scored (weights 5/4/3/2/1 on the judge's criteria):`);
 for (const c of CANDIDATES) {
